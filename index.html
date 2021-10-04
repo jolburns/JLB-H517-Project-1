@@ -25,23 +25,32 @@
 </head>
 <body>
 
-	<svg id="map" width="400" height="400">
+	<svg id="map" width="600" height="600">
 		<text id='label' x='0' y='20'>1854 Broad Street Cholera Outbreak</text>
 		<g transform="translate(30,40)"></g>
+	</svg></br>
+	<svg id="death_day_bar" width="300" height="200">
+		<text id='label' x='0' y='20'>Deaths by day</text>
+		<g transform="translate(30,40)"></g>
 	</svg>
-
 	
 	<script>
 		//setting up variables for later
 		var map_width = 600;
 		var map_height = 600;
+		var ddb_width = 300;
+		var ddb_height = 200;
+		var ddb_bar_height_max = 180;
+		var ddb_bar_width = 10;
 		var street_start_stop = [];
 		var pumps = [];
 		var death_days = [];
+		var max_death_day = [0];
 		var death_xy_age_sex_date = [];
 		
-		//select the map svg
+		//select the svgs
 		var map_svg = d3.select("#map").attr("width", map_width).attr("height", map_height);
+		var death_day_bar_svg = d3.select("#death_day_bar").attr("width", ddb_width).attr("height", ddb_height);;
 		
 		//loading in streets.json and displaying the map
 		d3.json('streets.json', function(data) 
@@ -106,6 +115,7 @@
 			for(i = 0; i < data.length; i++)
 			{
 				death_days.push([i, data[i]['date'], data[i]['deaths']]);
+				if(data[i]['deaths'] >= max_death_day[0]) {max_death_day[0] = parseInt(data[i]['deaths']);}
 			}
 			//console.log(death_days);
 		});
@@ -156,7 +166,18 @@
 			
 			//color and size
 			death_icons.attr("width", 5).attr("height", 3).attr("fill", "red");
+			
+			//make the deaths by day bar chart
+			//create the blank rectangles, then give them properties
+			var death_bars = death_day_bar_svg.selectAll('rect').data(death_days).enter().append('rect');
+			death_bars.attr('height', function(dd) {return (dd[2]/max_death_day)*ddb_bar_height_max;})
+				.attr('width', ddb_bar_width).attr('x', function(dd, i) {return i*ddb_bar_width;})
+				.attr('y', function(dd) {return ddb_height - (dd[2]/max_death_day)*ddb_bar_height_max})
+				.attr("fill", "red");
 		});
+		
+		
+		
 	</script>
 </body>
 
