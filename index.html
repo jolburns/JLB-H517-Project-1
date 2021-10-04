@@ -26,7 +26,7 @@
 <body>
 
 	<svg id="map" width="400" height="400">
-		<text id='label' x='20' y='20'>1854 Broad Street Cholera Outbreak</text>
+		<text id='label' x='0' y='20'>1854 Broad Street Cholera Outbreak</text>
 		<g transform="translate(30,40)"></g>
 	</svg>
 
@@ -37,6 +37,7 @@
 		var map_height = 600;
 		var max_bar_height = 100;
 		var street_start_stop = [];
+		var pumps = [];
 		
 		d3.json('streets.json', function(data) 
 		{
@@ -49,13 +50,26 @@
 					street_start_stop.push([i, data[i][1]['x'], data[i][1]['y'], data[i][2]['x'], data[i][2]['y']]);
 				}
 			}
-			console.log(street_start_stop);
+			
 			
 			//select the map svg
 			var map_svg = d3.select("#map").attr("width", map_width).attr("height", map_height);
 			
-			//make the lines
+			//make the empty lines
 			var map_lines = map_svg.selectAll('line').data(street_start_stop).enter().append('line');
+			
+			//functions to fix scaling
+			var x_scale = d3.scale.linear().domain([0, d3.max(street_start_stop, function(sss) {return sss[1];})]).range([-50, map_width-50]);
+			var y_scale = d3.scale.linear().domain([0, d3.max(street_start_stop, function(sss) {return sss[2];})]).range([map_height-15, 15]);
+			
+			//set x1/y1 for the lines
+			map_lines.attr('x1', function(sss) {return x_scale(sss[1])}).attr('y1', function(sss) {return y_scale(sss[2])});
+			//set x2/y2 for the lines
+			map_lines.attr('x2', function(sss) {return x_scale(sss[3])}).attr('y2', function(sss) {return y_scale(sss[4])});
+			
+			//color in the lines
+			map_lines.attr('stroke', "black");
+			
 		});
 		
 		/*d3.json('streets.json', function(data) 
