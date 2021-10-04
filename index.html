@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Project 1 - sample code 2</title>
+	<title>Project 1 - John L Burns - Cholera Map</title>
 	<script src="https://d3js.org/d3.v3.min.js"></script>
 	<style>
     	text { 
@@ -25,22 +25,59 @@
 </head>
 <body>
 
-	<svg id="main" width="600" height="600">
-		<text id='label' x='20' y='20'>Energy prodcution for the US</text>
+	<svg id="map" width="400" height="400">
+		<text id='label' x='20' y='20'>1854 Broad Street Cholera Outbreak</text>
 		<g transform="translate(30,40)"></g>
 	</svg>
 
 	
 	<script>
+		//setting up variables for later
+		var map_width = 600;
+		var map_height = 600;
+		var max_bar_height = 100;
+		var street_start_stop = [];
+		
+		d3.json('streets.json', function(data) 
+		{
+			// Loop through all objects
+			for (i = 0; i < data.length; i++) 
+			{
+				street_start_stop.push([i, data[i][0]['x'], data[i][0]['y'], data[i][1]['x'], data[i][1]['y']]);
+				if (data[i].length == 3)
+				{
+					street_start_stop.push([i, data[i][1]['x'], data[i][1]['y'], data[i][2]['x'], data[i][2]['y']]);
+				}
+			}
+			console.log(street_start_stop);
+			
+			//select the map svg
+			var map_svg = d3.select("#map").attr("width", map_width).attr("height", map_height);
+			
+			//make the lines
+			var map_lines = map_svg.selectAll('line').data(street_start_stop).enter().append('line');
+		});
+		
+		/*d3.json('streets.json', function(data) 
+		{
+			var record = data[0];
+				
+			// loop through all years, from 1980 to 2012
+			for (var y=1980; y<=2012; y++) 
+			{
+				var value = record[y];
+				var object = {
+					year: y,
+					production: +value
+				};
 
-		var CHART_WIDTH = 400;
-		var CHART_HEIGHT = 130;
+				energyProduction.push(object);
+			}
+			//drawLineChart();
 
-		var MAX_BAR_HEIGHT = 100;
+		});*/
 
-		var energyProduction = [];
-
-		function drawLineChart() 
+		/*function drawLineChart() 
 		{
 			var maxValue = 100; 
 			
@@ -88,27 +125,10 @@
     			.attr('d', pathGenerator(energyProduction));
 
 
-		}
+		}*/
 			
 
-		d3.csv('energy_us.csv', function(data) 
-		{
-			var record = data[0];
-				
-			// loop through all years, from 1980 to 2012
-			for (var y=1980; y<=2012; y++) 
-			{
-				var value = record[y];
-				var object = {
-					year: y,
-					production: +value
-				};
-
-				energyProduction.push(object);
-			}
-			drawLineChart();
-
-		});
+		
 		
 	</script>
 </body>
