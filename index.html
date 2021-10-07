@@ -33,24 +33,30 @@
 		<text id='label' x='0' y='20'>Deaths by day</text>
 		<g transform="translate(30,40)"></g>
 	</svg>
+	<div id="tooltip" death_bars='null'>
+	</div>
 	
 	<script>
 		//setting up variables for later
 		var map_width = 600;
 		var map_height = 600;
-		var ddb_width = 300;
+		var ddb_width = 500;
 		var ddb_height = 200;
-		var ddb_bar_height_max = 180;
+		var ddb_bar_height_max = 140;
+		var ddb_bar_height_offset = 30;
 		var ddb_bar_width = 10;
 		var street_start_stop = [];
 		var pumps = [];
 		var death_days = [];
+		var days = [];
 		var max_death_day = [0];
 		var death_xy_age_sex_date = [];
 		
 		//select the svgs
 		var map_svg = d3.select("#map").attr("width", map_width).attr("height", map_height);
-		var death_day_bar_svg = d3.select("#death_day_bar").attr("width", ddb_width).attr("height", ddb_height);;
+		
+		//select the tooltip
+		var tooltip = d3.select("#tooltip");
 		
 		//loading in streets.json and displaying the map
 		d3.json('streets.json', function(data) 
@@ -115,6 +121,7 @@
 			for(i = 0; i < data.length; i++)
 			{
 				death_days.push([i, data[i]['date'], data[i]['deaths']]);
+				days.push(data[i]['date']);
 				if(data[i]['deaths'] >= max_death_day[0]) {max_death_day[0] = parseInt(data[i]['deaths']);}
 			}
 			//console.log(death_days);
@@ -149,6 +156,7 @@
 				for(j = 0; j < death_days[i][2]; j++)
 				{
 					death_xy_age_sex_date[count][4] = death_days[i][0];
+					death_xy_age_sex_date[count][5] = death_days[i][1];
 					count = count+1;
 				}
 			}
@@ -161,19 +169,87 @@
 			//make the empty death icons
 			var death_icons = map_svg.selectAll('rect').data(death_xy_age_sex_date).enter().append('rect');
 			
-			//set x/y for deaths
-			death_icons.attr("x", function(p) {return x_scale(p[0]);}).attr("y", function(p) {return y_scale(p[1]);});
+			//set x/y/date for deaths
+			death_icons.attr("x", function(p) {return x_scale(p[0]);})
+				.attr("y", function(p) {return y_scale(p[1]);})
+				.attr("date", function(p) {return p[5];});
 			
 			//color and size
 			death_icons.attr("width", 5).attr("height", 3).attr("fill", "red");
 			
+			
 			//make the deaths by day bar chart
+			//correct ddb_width
+			ddb_width = 10*days.length;
+			ddb_x_offset = 25;
+			var death_day_bar_svg = d3.select("#death_day_bar").attr("width", ddb_width+ddb_x_offset).attr("height", ddb_height);
+			
+			//add axis - help from https://stackoverflow.com/questions/41579560/custom-x-axis-labels-in-d3-bar-charts
+			//additional help from https://stackoverflow.com/questions/52026579/how-to-draw-grid-lines-fir-every-ticks
+			var ddx = d3.scale.ordinal().domain(days).rangeRoundBands([-12, ddb_width], .005);
+			var ddx_axis = d3.svg.axis().scale(ddx).orient("bottom").tickSize(0);
+			death_day_bar_svg.append("g").attr("class", "x axis")
+				.attr("transform", "translate("+ddb_x_offset+","+(ddb_height-ddb_bar_height_offset)+")").call(ddx_axis)
+				.selectAll("text").attr("transform", "rotate(-90)").style("font-size", "7px").style("text-anchor", "end");
+			
+			var ddy = d3.scale.linear().domain([max_death_day,0]).range([0,ddb_height-2*ddb_bar_height_offset]);
+			var ddy_axis = d3.svg.axis().scale(ddy).orient("left").ticks(6).outerTickSize(0).innerTickSize(-ddb_width);
+			death_day_bar_svg.append("g").attr("class", "y axis").attr("transform", "translate("+(ddb_x_offset-3)+","+(ddb_bar_height_offset)+")")
+				.call(ddy_axis).style("stroke-dasharray", "5 5")
+				.selectAll("text").attr("transform", "rotate(0)").style("font-size", "7px").style("text-anchor", "end");
+			console.log(death_days)
 			//create the blank rectangles, then give them properties
 			var death_bars = death_day_bar_svg.selectAll('rect').data(death_days).enter().append('rect');
-			death_bars.attr('height', function(dd) {return (dd[2]/max_death_day)*ddb_bar_height_max;})
+			death_bars.attr('height', function(dd) {return 1+ (dd[2]/max_death_day)*ddb_bar_height_max;})
 				.attr('width', ddb_bar_width).attr('x', function(dd, i) {return i*ddb_bar_width;})
-				.attr('y', function(dd) {return ddb_height - (dd[2]/max_death_day)*ddb_bar_height_max})
-				.attr("fill", "red");
+				.attr('y', function(dd) {return ddb_height - ddb_bar_height_offset - 2 - (dd[2]/max_death_day)*ddb_bar_height_max})
+				.attr("date", function(dd) {return dd[1];})
+				.attr("fill", "red").attr("transform","translate("+ddb_x_offset+",0)");
+			
+			//give the bars mouseover events
+			//some help from https://stackoverflow.com/questions/35222285/d3-js-bar-mouseover
+			//and https://stackoverflow.com/questions/58701387/d3-js-select-node-element-based-on-attributes-value-using-selectall
+			death_bars.on("click", function(d) {
+				//get the current state of the chart
+				selected_state = death_bars.filter(function() {
+					return d3.select(this).attr("date") == d[1];
+				}).attr("fill") == 'red';
+				unselected_state = death_bars.filter(function() {
+					return d3.select(this).attr("date") != d[1];
+				}).attr("fill") == 'red';
+				
+				//if the user clicked the same bar, then reset
+				if(selected_state == true && unselected_state == false){
+					//reset the tooltip
+					tooltip.text("");
+					tooltip.attr("death_bars", 'null');
+					death_bars.filter(function() {
+						return d3.select(this).attr("date") != d[1];
+					}).attr("fill", 'red');
+					death_icons.filter(function() {
+						return d3.select(this).attr("date") != d[1];
+					}).attr("fill", 'red');
+				} else {
+					//change the tooltip under the bar chart
+					tooltip.text(d[1] + " deaths: " + d[2]);
+					tooltip.attr("death_bars", d[1]);
+					death_bars.filter(function() {
+						return d3.select(this).attr("date") != d[1];
+					}).attr("fill", 'black');
+					death_icons.filter(function() {
+						return d3.select(this).attr("date") != d[1];
+					}).attr("fill", 'black');
+					death_bars.filter(function() {
+						return d3.select(this).attr("date") == d[1];
+					}).attr("fill", 'red');
+					death_icons.filter(function() {
+						return d3.select(this).attr("date") == d[1];
+					}).attr("fill", 'red');
+				}
+			})
+			/*.on("mouseout", function(d) {
+				
+			})*/;
 		});
 		
 		
