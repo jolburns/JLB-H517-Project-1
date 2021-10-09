@@ -30,25 +30,21 @@
 				<td>
 					<svg id="map" width="600" height="600">
 						<text id='label' x='0' y='20'>1854 Broad Street Cholera Outbreak</text>
-						<g transform="translate(30,40)"></g>
 					</svg>
-					<div id="map_tooltip"></div>
+					<div id="map_tooltip"><br/></div>
 				</td>
 				<td>
 					<div>
 						<svg id="micro_death_day_bar" width="0" height="0">
 							<text id='label' x='0' y='20'>Days</text>
-							<g transform="translate(30,40)"></g>
 						</svg>
 						</br>
 						<svg id="micro_age_bar" width="0" height="0">
 							<text id='label' x='0' y='10'>Ages</text>
-							<g transform="translate(30,40)"></g>
 						</svg>
 						</br>
 						<svg id="micro_sex_bar" width="0" height="0">
-							<text id='label' x='0' y='10'>Sexes</text>
-							<g transform="translate(30,40)"></g>
+							<text id='label' x='0' y='12'>Sexes</text>
 						</svg>
 						</br>
 						<div id="micro_tooltip" death_bars='null' age_bars='null' sex_bars='null'></div>
@@ -61,17 +57,17 @@
 		<text id='label' x='0' y='20'>Deaths by day</text>
 		<g transform="translate(30,40)"></g>
 	</svg>
-	<div id="death_tooltip" death_bars='null' age_bars='null' sex_bars='null'></div>
+	<div id="death_tooltip" death_bars='null' age_bars='null' sex_bars='null'><br/></div>
 	<svg id="age_bar" width="300" height="200">
 		<text id='label' x='0' y='20'>Deaths by age group</text>
 		<g transform="translate(30,40)"></g>
 	</svg>
-	<div id="age_tooltip"></div>
+	<div id="age_tooltip"><br/></div>
 	<svg id="sex_bar" width="300" height="200">
 		<text id='label' x='0' y='20'>Deaths by sex</text>
 		<g transform="translate(30,40)"></g>
 	</svg>
-	<div id="sex_tooltip"></div>
+	<div id="sex_tooltip"><br/></div>
 	
 	
 	<script>
@@ -146,13 +142,34 @@
 		//select the tooltips
 		var map_tooltip = d3.select("#map_tooltip");
 		var death_tooltip = d3.select("#death_tooltip");
-		var age_tooltip = d3.select("#death_tooltip");
-		var sex_tooltip = d3.select("#death_tooltip");
+		var age_tooltip = d3.select("#age_tooltip");
+		var sex_tooltip = d3.select("#sex_tooltip");
 		var micro_tooltip = d3.select("#micro_tooltip");
+		
+		//road ids
+		var oxford_street = [1120, 1080, 990, 980, 940, 930, 890, 860, 820, 800, 790, 750, 710, 670, 630, 500, 490, 491, 410, 411, 370, 371, 320, 310, 240, 210, 190, 191];
+		var regent_street = [160, 480, 950, 1301, 1300, 1440, 1651, 1650, 1760, 2220, 2290, 2780, 3060, 3120, 3360, 3361, 3460, 3500, 3870, 4070, 4350, ];
+		var poland_street = [1211, 1210, 1390, 1930];
+		var broad_street = [2330, 2150, 2020, 1920, 1860];
+		var marshall_street = [2001, 2340, 2750, 2751];
 		
 		//loading in streets.json and displaying the map
 		d3.json('streets.json', function(data) 
 		{
+			//add the brewery
+			//var brew_path = d3.svg.line([0,0],[0,100],[100,100],[100,0]);
+			var brewery = map_svg.append("path").attr('d','M 320.03695138479986 224.11999361025383 L 334 250 L 349 242 L 334.24 216.78')
+				.attr("fill", '#1b9e77').attr("id","brewery")
+				.on("mouseover", function(d) {map_tooltip.text('Brewery');})
+				.on("mouseout", function(d) {map_tooltip.text('').append('br');});
+			var brewery_text = map_svg.append("g").append("text").style("font-size", "8px").append("textPath").attr("xlink:href","#brewery").text("Brewery");
+			//'M 235 185 L 270 172 L 280 199 L 247 212'
+			var work_house = map_svg.append("path").attr('d','M 247 212 L 279 199 L 270 172 L 235 185')
+				.attr("fill", '#1b9e77').attr("id","work_house")
+				.on("mouseover", function(d) {map_tooltip.text('Work House');})
+				.on("mouseout", function(d) {map_tooltip.text('').append('br');});
+			var work_house_text = map_svg.append("g").append("text").style("font-size", "9px").append("textPath").attr("xlink:href","#work_house").text("Work\u00A0\u00A0\u00A0\u00A0 House");
+			
 			// Loop through all objects
 			for (i = 0; i < data.length; i++) 
 			{
@@ -162,7 +179,8 @@
 					y1 = parseFloat(data[i][j]['y'])
 					x2 = parseFloat(data[i][j+1]['x'])
 					y2 = parseFloat(data[i][j+1]['y'])
-					street_start_stop.push([x1+0.06, y1+0.08, x2+0.06, y2+0.08]);
+					street_start_stop.push([x1, y1, x2, y2, i, j]);
+					//street_start_stop.push([x1+0.06, y1+0.08, x2+0.06, y2+0.08]);
 					//street_start_stop.push([x1-0.06, y1-0.08, x2-0.06, y2-0.08]);
 				}
 			}
@@ -178,9 +196,39 @@
 			map_lines.attr('x1', function(sss) {return x_scale(sss[0])}).attr('y1', function(sss) {return y_scale(sss[1])});
 			//set x2/y2 for the lines
 			map_lines.attr('x2', function(sss) {return x_scale(sss[2])}).attr('y2', function(sss) {return y_scale(sss[3])});
+			//set the id for the lines
+			map_lines.attr('id', function(sss) {return "id"+sss[4]+sss[5];});
 			
 			//color in the lines
 			map_lines.attr('stroke', "black");
+			
+			//color in the streets
+			for (i = 0; i < oxford_street.length; i++) {
+				map_svg.select('#id'+oxford_street[i]).attr('stroke', "#1b9e77")
+					.on("mouseover", function(d) {map_tooltip.text('Oxford Street');})
+					.on("mouseout", function(d) {map_tooltip.text('').append('br');});
+			}
+			for (i = 0; i < regent_street.length; i++) {
+				map_svg.select('#id'+regent_street[i]).attr('stroke', "#1b9e77")
+					.on("mouseover", function(d) {map_tooltip.text('Regent Street');})
+					.on("mouseout", function(d) {map_tooltip.text('').append('br');});
+			}
+			for (i = 0; i < poland_street.length; i++) {
+				map_svg.select('#id'+poland_street[i]).attr('stroke', "#1b9e77")
+					.on("mouseover", function(d) {map_tooltip.text('Poland Street');})
+					.on("mouseout", function(d) {map_tooltip.text('').append('br');});
+			}
+			for (i = 0; i < broad_street.length; i++) {
+				map_svg.select('#id'+broad_street[i]).attr('stroke', "#1b9e77")
+					.on("mouseover", function(d) {map_tooltip.text('Broad Street');})
+					.on("mouseout", function(d) {map_tooltip.text('').append('br');});
+			}
+			for (i = 0; i < marshall_street.length; i++) {
+				map_svg.select('#id'+marshall_street[i]).attr('stroke', "#1b9e77")
+					.on("mouseover", function(d) {map_tooltip.text('Marshall Street');})
+					.on("mouseout", function(d) {map_tooltip.text('').append('br');});
+			}
+			
 		});
 		
 		
@@ -204,7 +252,7 @@
 			pump_icons.attr("cx", function(p) {return x_scale(p[1]);}).attr("cy", function(p) {return y_scale(p[2]);}).attr("r", 4);
 			
 			//color the icons
-			pump_icons.attr("fill", "blue");
+			pump_icons.attr("fill", "#7570b3");
 		});
 		
 		//loading in deathdays.csv 
@@ -269,7 +317,17 @@
 				.attr("age", function(p) {return p[2];});
 			
 			//color and size
-			death_icons.attr("width", 5).attr("height", 3).attr("fill", "red");
+			death_icons.attr("width", 5).attr("height", 3).attr("fill", "#d95f02");
+			
+			//mouseover stuff
+			death_icons.on("mouseover", function(d) {
+				map_tooltip.text(d[3] + ' aged ' + d[2] + ' died on ' + d[5]);
+				console.log(d);
+			});
+			
+			death_icons.on("mouseout", function(d) {
+				map_tooltip.text("").append('br');
+			});
 			
 			//function for making bars
 			function make_bars(death_info) 
@@ -317,7 +375,7 @@
 					.attr('width', ddb_bar_width).attr('x', function(dd, i) {return i*ddb_bar_width;})
 					.attr('y', function(dd) {return ddb_height - ddb_bar_height_offset - 2 - (dd[2]/max_death_day)*ddb_bar_height_max})
 					.attr("date", function(dd) {return dd[1];})
-					.attr("fill", "red").attr("transform","translate("+ddb_x_offset+",0)");
+					.attr("fill", "#d95f02").attr("transform","translate("+ddb_x_offset+",0)");
 					
 				
 				//make the age bars
@@ -363,7 +421,7 @@
 					.attr('width', ab_bar_width).attr('x', function(dd, i) {return i*ab_bar_width;})
 					.attr('y', function(dd) {return ab_height - ab_bar_height_offset - 2 - (dd[1]/max_death_age)*ab_bar_height_max})
 					.attr("age", function(dd) {return dd[0];})
-					.attr("fill", "red").attr("transform","translate("+ab_x_offset+",0)");
+					.attr("fill", "#d95f02").attr("transform","translate("+ab_x_offset+",0)");
 			
 			
 				//make the sex bars
@@ -407,7 +465,7 @@
 					.attr('width', sb_bar_width).attr('x', function(dd, i) {return i*sb_bar_width;})
 					.attr('y', function(dd) {return sb_height - sb_bar_height_offset - 2 - (dd[1]/max_death_sex)*sb_bar_height_max})
 					.attr("sex", function(dd) {return dd[0];})
-					.attr("fill", "red").attr("transform","translate("+sb_x_offset+",0)");
+					.attr("fill", "#d95f02").attr("transform","translate("+sb_x_offset+",0)");
 				
 			}
 			make_bars(death_xy_age_sex_date);
@@ -458,7 +516,7 @@
 					.attr('width', mddb_bar_width).attr('x', function(dd, i) {return i*mddb_bar_width;})
 					.attr('y', function(dd) {return mddb_height - mddb_bar_height_offset - 2 - (dd[2]/max_death_day)*mddb_bar_height_max})
 					.attr("date", function(dd) {return dd[1];})
-					.attr("fill", "red").attr("transform","translate("+mddb_x_offset+",0)");
+					.attr("fill", "#d95f02").attr("transform","translate("+mddb_x_offset+",0)");
 				
 				//make the age bars
 				//console.log(death_xy_age_sex_date);
@@ -503,7 +561,7 @@
 					.attr('width', mab_bar_width).attr('x', function(dd, i) {return i*mab_bar_width;})
 					.attr('y', function(dd) {return mab_height - mab_bar_height_offset - 2 - (dd[1]/max_death_age)*mab_bar_height_max})
 					.attr("age", function(dd) {return dd[0];})
-					.attr("fill", "red").attr("transform","translate("+mab_x_offset+",0)");
+					.attr("fill", "#d95f02").attr("transform","translate("+mab_x_offset+",0)");
 			
 			
 				//make the sex bars
@@ -549,7 +607,7 @@
 					.attr('width', msb_bar_width).attr('x', function(dd, i) {return i*msb_bar_width;})
 					.attr('y', function(dd) {return msb_height - msb_bar_height_offset - 2 - (dd[1]/max_death_sex)*msb_bar_height_max})
 					.attr("sex", function(dd) {return dd[0];})
-					.attr("fill", "red").attr("transform","translate("+msb_x_offset+",0)");
+					.attr("fill", "#d95f02").attr("transform","translate("+msb_x_offset+",0)");
 				
 				micro_tooltip.text("Total deaths: " + death_info.length);
 			}
@@ -567,8 +625,8 @@
 				tt_ab = death_tooltip.attr("age_bars");
 				tt_sb = death_tooltip.attr("sex_bars");
 				
-				//reset all the death_icons to red
-				death_icons.attr("fill", 'red');
+				//reset all the death_icons to #d95f02
+				death_icons.attr("fill", '#d95f02');
 				
 				//if all the selections are empty, exit
 				if(tt_db == 'null' && tt_ab == 'null' && tt_sb == 'null') {
@@ -623,7 +681,7 @@
 				micro_death_day_bar_svg.attr("width", 0).attr("height", 0);
 				
 				//clear out the text
-				micro_tooltip.text("");
+				micro_tooltip.text("").append('br');
 			}
 			
 			//give the death bars mouse click events
@@ -633,21 +691,21 @@
 				//get the current state of the chart
 				selected_state = death_bars_interact.filter(function() {
 					return d3.select(this).attr("date") == d[1];
-				}).attr("fill") == 'red';
+				}).attr("fill") == '#d95f02';
 				unselected_state = death_bars_interact.filter(function() {
 					return d3.select(this).attr("date") != d[1];
-				}).attr("fill") == 'red';
+				}).attr("fill") == '#d95f02';
 				
 				//if the user clicked the same bar, then reset
 				if(selected_state == true && unselected_state == false){
 					//reset the death_tooltip
-					death_tooltip.text("");
+					death_tooltip.text("").append('br');
 					death_tooltip.attr("death_bars", 'null');
 					
 					//reset the deathbars
 					death_bars_interact.filter(function() {
 						return d3.select(this).attr("date") != d[1];
-					}).attr("fill", 'red');
+					}).attr("fill", '#d95f02');
 					
 				} else {
 					//change the death_tooltip under the bar chart
@@ -656,14 +714,14 @@
 					//set the deathbars death_tooltip variable
 					death_tooltip.attr("death_bars", d[1]);
 					
-					//set the deathbars to black/red
+					//set the deathbars to black/#d95f02
 					death_bars_interact.filter(function() {
 						return d3.select(this).attr("date") != d[1];
 					}).attr("fill", 'black');
 					
 					death_bars_interact.filter(function() {
 						return d3.select(this).attr("date") == d[1];
-					}).attr("fill", 'red');
+					}).attr("fill", '#d95f02');
 					
 				}
 				
@@ -678,37 +736,37 @@
 				//get the current state of the chart
 				selected_state = age_bars_interact.filter(function() {
 					return d3.select(this).attr("age") == d[0];
-				}).attr("fill") == 'red';
+				}).attr("fill") == '#d95f02';
 				unselected_state = age_bars_interact.filter(function() {
 					return d3.select(this).attr("age") != d[0];
-				}).attr("fill") == 'red';
+				}).attr("fill") == '#d95f02';
 				
 				//if the user clicked the same bar, then reset
 				if(selected_state == true && unselected_state == false){
 					//reset the death_tooltip
-					age_tooltip.text("");
+					age_tooltip.text("").append('br');
 					death_tooltip.attr("age_bars", 'null');
 					
 					//reset the deathbars
 					age_bars_interact.filter(function() {
 						return d3.select(this).attr("age") != d[0];
-					}).attr("fill", 'red');
+					}).attr("fill", '#d95f02');
 					
 				} else {
-					//change the death_tooltip under the bar chart
+					//change the age_tooltip under the bar chart
 					age_tooltip.text(d[0] + " deaths: " + d[1]);
 					
 					//set the deathbars death_tooltip variable
 					death_tooltip.attr("age_bars", d[0]);
 					
-					//set the deathbars to black/red
+					//set the deathbars to black/#d95f02
 					age_bars_interact.filter(function() {
 						return d3.select(this).attr("age") != d[0];
 					}).attr("fill", 'black');
 					
 					age_bars_interact.filter(function() {
 						return d3.select(this).attr("age") == d[0];
-					}).attr("fill", 'red');
+					}).attr("fill", '#d95f02');
 					
 				}
 				
@@ -723,37 +781,37 @@
 				//get the current state of the chart
 				selected_state = sex_bars_interact.filter(function() {
 					return d3.select(this).attr("sex") == d[0];
-				}).attr("fill") == 'red';
+				}).attr("fill") == '#d95f02';
 				unselected_state = sex_bars_interact.filter(function() {
 					return d3.select(this).attr("sex") != d[0];
-				}).attr("fill") == 'red';
+				}).attr("fill") == '#d95f02';
 				
 				//if the user clicked the same bar, then reset
 				if(selected_state == true && unselected_state == false){
 					//reset the death_tooltip
-					age_tooltip.text("");
+					sex_tooltip.text("").append('br');
 					death_tooltip.attr("sex_bars", 'null');
 					
 					//reset the deathbars
 					sex_bars_interact.filter(function() {
 						return d3.select(this).attr("sex") != d[0];
-					}).attr("fill", 'red');
+					}).attr("fill", '#d95f02');
 					
 				} else {
 					//change the death_tooltip under the bar chart
-					age_tooltip.text(d[0] + " deaths: " + d[1]);
+					sex_tooltip.text(d[0] + " deaths: " + d[1]);
 					
 					//set the deathbars death_tooltip variable
 					death_tooltip.attr("sex_bars", d[0]);
 					
-					//set the deathbars to black/red
+					//set the deathbars to black/#d95f02
 					sex_bars_interact.filter(function() {
 						return d3.select(this).attr("sex") != d[0];
 					}).attr("fill", 'black');
 					
 					sex_bars_interact.filter(function() {
 						return d3.select(this).attr("sex") == d[0];
-					}).attr("fill", 'red');
+					}).attr("fill", '#d95f02');
 					
 				}
 				
