@@ -53,20 +53,37 @@
 			</tr>
 		</table>
 	</div></br>
-	<svg id="death_day_bar" width="300" height="200">
-		<text id='label' x='0' y='20'>Deaths by day</text>
-	</svg>
-	<div id="death_tooltip" death_bars='null' age_bars='null' sex_bars='null'><br/></div>
-	<svg id="age_bar" width="300" height="200">
-		<text id='label' x='0' y='20'>Deaths by age group</text>
-	</svg>
-	<div id="age_tooltip"><br/></div>
-	<svg id="sex_bar" width="300" height="200">
-		<text id='label' x='0' y='20'>Deaths by sex</text>
-	</svg>
-	<div id="sex_tooltip"><br/></div>
-	
-	
+	<table>
+		<tr>
+			<td>
+				<svg id="death_day_bar" width="300" height="200">
+					<text id='label' x='0' y='20'>Deaths by day</text>
+				</svg>
+			</td>
+			<td>
+				<svg id="age_bar" width="300" height="200">
+					<text id='label' x='0' y='20'>Deaths by age group</text>
+				</svg>
+			</td>
+			<td>
+				<svg id="sex_bar" width="300" height="200">
+					<text id='label' x='0' y='20'>Deaths by sex</text>
+				</svg>
+			</td>
+		</tr>
+		<tr>
+			<td style="text-align: center;">
+				<div id="death_tooltip" death_bars='null' death_bars_deaths = 'null' age_bars='null' sex_bars='null'><br/></div>
+			</td>
+			<td style="text-align: center;">
+				<div id="age_tooltip"><br/></div>
+			</td>
+			<td style="text-align: center;">
+				<div id="sex_tooltip"><br/></div>
+			</td>
+		</tr>
+	</table>
+
 	<script>
 		//setting up variables for later
 		//main map
@@ -326,6 +343,12 @@
 				map_tooltip.text("").append('br');
 			});
 			
+			//zoom and pan help from - https://coderwall.com/p/psogia/simplest-way-to-add-zoom-pan-on-d3-js
+			//d3 v3 has no translateExtent function which would be really helpful right now..
+			function zoomed() {map_svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")};
+			var zoom = d3.behavior.zoom().scaleExtent([1,4]).on("zoom", zoomed);
+			map_svg.call(zoom);
+			//
 			//function for making bars
 			function make_bars(death_info) 
 			{
@@ -619,7 +642,6 @@
 			{
 				//grab the tooltip information
 				tt_db = death_tooltip.attr("death_bars").split(",");
-				
 				tt_ab = death_tooltip.attr("age_bars");
 				tt_sb = death_tooltip.attr("sex_bars");
 				
@@ -688,6 +710,7 @@
 			//some help from https://stackoverflow.com/questions/35222285/d3-js-bar-mouseover
 			//and https://stackoverflow.com/questions/58701387/d3-js-select-node-element-based-on-attributes-value-using-selectall
 			death_bars_interact.on("click", function(d) {
+				
 				//get the current state of the chart
 				selected_state = death_bars_interact.filter(function() {
 					return d3.select(this).attr("date") == d[1];
@@ -696,8 +719,10 @@
 					return d3.select(this).attr("date") != d[1];
 				}).attr("fill") == '#d95f02';
 				
+				//get the stored arrays
 				db_array = death_tooltip.attr("death_bars").split(",");
 				index_current = db_array.indexOf(d[1]);
+				dbd_array = death_tooltip.attr("death_bars_deaths").split(",");
 				
 				//set the deathbars to black/#d95f02
 				death_bars_interact.attr("fill", 'black');
@@ -707,22 +732,27 @@
 				{
 					//append to the db_array
 					db_array.push(d[1]);
+					dbd_array.push(d[2]);
 				} //remove the selected index from the bars 
 				else {
 					db_array.splice(index_current, 1);
+					dbd_array.splice(index_current, 1);
 				}
 				
 				//if the array has more than null
 				if (db_array.length > 1) 
 				{
+					temp_text = "";
 					//set the selected bars to orange
-					for (i = 0; i < db_array.length; i++) {
+					for (i = 1; i < db_array.length; i++) {
 						death_bars_interact.filter(function() {
 							return d3.select(this).attr("date") == db_array[i];
 						}).attr("fill", '#d95f02');
+						if (i == db_array.length-1) {temp_text += db_array[i] + " deaths: " + dbd_array[i];}
+						else {temp_text += db_array[i] + " deaths: " + dbd_array[i] + " || ";}
 					}
 					//change the death_tooltip under the bar chart to most recent selection
-					death_tooltip.text(d[1] + " deaths: " + d[2]);
+					death_tooltip.text(temp_text);
 				} else {
 					//only null value
 					death_bars_interact.attr("fill", '#d95f02');
@@ -731,6 +761,7 @@
 				
 				//set the deathbars death_tooltip variable
 				death_tooltip.attr("death_bars", db_array);
+				death_tooltip.attr("death_bars_deaths", dbd_array);
 				
 				//make the mini charts
 				click_death_info = filter_death_info(death_xy_age_sex_date);
