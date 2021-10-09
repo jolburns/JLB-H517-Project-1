@@ -55,17 +55,14 @@
 	</div></br>
 	<svg id="death_day_bar" width="300" height="200">
 		<text id='label' x='0' y='20'>Deaths by day</text>
-		<g transform="translate(30,40)"></g>
 	</svg>
 	<div id="death_tooltip" death_bars='null' age_bars='null' sex_bars='null'><br/></div>
 	<svg id="age_bar" width="300" height="200">
 		<text id='label' x='0' y='20'>Deaths by age group</text>
-		<g transform="translate(30,40)"></g>
 	</svg>
 	<div id="age_tooltip"><br/></div>
 	<svg id="sex_bar" width="300" height="200">
 		<text id='label' x='0' y='20'>Deaths by sex</text>
-		<g transform="translate(30,40)"></g>
 	</svg>
 	<div id="sex_tooltip"><br/></div>
 	
@@ -621,7 +618,8 @@
 			function filter_death_info(temp_death_info)
 			{
 				//grab the tooltip information
-				tt_db = death_tooltip.attr("death_bars");
+				tt_db = death_tooltip.attr("death_bars").split(",");
+				
 				tt_ab = death_tooltip.attr("age_bars");
 				tt_sb = death_tooltip.attr("sex_bars");
 				
@@ -635,13 +633,15 @@
 				
 				//filter for date, set != icons to black
 				if (tt_db != 'null') {
-					temp_death_info = temp_death_info.filter(function(d) {
-						return d[5] == tt_db;
-					});
+					death_icons.attr("fill", 'black');
+					tt_db.splice(0,1);
+					temp_death_info = temp_death_info.filter(item => tt_db.includes(item[5]));
 					
-					death_icons.filter(function() {
-						return d3.select(this).attr("date") != tt_db;
-					}).attr("fill", 'black');
+					for (i =0; i < tt_db.length; i++) {
+						death_icons.filter(function() {
+							return d3.select(this).attr("date") == tt_db[i];
+						}).attr("fill", '#d95f02');
+					}
 				} 
 				
 				//filter for age, set != icons to black
@@ -696,34 +696,41 @@
 					return d3.select(this).attr("date") != d[1];
 				}).attr("fill") == '#d95f02';
 				
-				//if the user clicked the same bar, then reset
-				if(selected_state == true && unselected_state == false){
-					//reset the death_tooltip
-					death_tooltip.text("").append('br');
-					death_tooltip.attr("death_bars", 'null');
-					
-					//reset the deathbars
-					death_bars_interact.filter(function() {
-						return d3.select(this).attr("date") != d[1];
-					}).attr("fill", '#d95f02');
-					
-				} else {
-					//change the death_tooltip under the bar chart
-					death_tooltip.text(d[1] + " deaths: " + d[2]);
-					
-					//set the deathbars death_tooltip variable
-					death_tooltip.attr("death_bars", d[1]);
-					
-					//set the deathbars to black/#d95f02
-					death_bars_interact.filter(function() {
-						return d3.select(this).attr("date") != d[1];
-					}).attr("fill", 'black');
-					
-					death_bars_interact.filter(function() {
-						return d3.select(this).attr("date") == d[1];
-					}).attr("fill", '#d95f02');
-					
+				db_array = death_tooltip.attr("death_bars").split(",");
+				index_current = db_array.indexOf(d[1]);
+				
+				//set the deathbars to black/#d95f02
+				death_bars_interact.attr("fill", 'black');
+				
+				//add to the selected bars
+				if (index_current == -1)
+				{
+					//append to the db_array
+					db_array.push(d[1]);
+				} //remove the selected index from the bars 
+				else {
+					db_array.splice(index_current, 1);
 				}
+				
+				//if the array has more than null
+				if (db_array.length > 1) 
+				{
+					//set the selected bars to orange
+					for (i = 0; i < db_array.length; i++) {
+						death_bars_interact.filter(function() {
+							return d3.select(this).attr("date") == db_array[i];
+						}).attr("fill", '#d95f02');
+					}
+					//change the death_tooltip under the bar chart to most recent selection
+					death_tooltip.text(d[1] + " deaths: " + d[2]);
+				} else {
+					//only null value
+					death_bars_interact.attr("fill", '#d95f02');
+					death_tooltip.text("").append('br');
+				}
+				
+				//set the deathbars death_tooltip variable
+				death_tooltip.attr("death_bars", db_array);
 				
 				//make the mini charts
 				click_death_info = filter_death_info(death_xy_age_sex_date);
