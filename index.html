@@ -21,6 +21,70 @@
 		rect {
 			stroke: white;
 		}
+		
+		/* The Modal (background) https://www.w3schools.com/howto/howto_css_modal_images.asp*/
+		.modal {
+			  display: none; /* Hidden by default */
+			  position: fixed; /* Stay in place */
+			  z-index: 1; /* Sit on top */
+			  padding-top: 100px; /* Location of the box */
+			  left: 0;
+			  top: 0;
+			  width: 100%; /* Full width */
+			  height: 100%; /* Full height */
+			  overflow: auto; /* Enable scroll if needed */
+			  background-color: rgb(0,0,0); /* Fallback color */
+			  background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+			}
+		
+		#caption {
+		  margin: auto;
+		  display: block;
+		  width: 80%;
+		  max-width: 700px;
+		  text-align: center;
+		  color: #ccc;
+		  padding: 10px 0;
+		  height: 150px;
+		}
+		
+		.modal-content {
+		  margin: auto;
+		  display: block;
+		  width: 80%;
+		  max-width: 300px;
+		}
+		
+		.close {
+		  position: absolute;
+		  top: 15px;
+		  right: 35px;
+		  color: #f1f1f1;
+		  font-size: 40px;
+		  font-weight: bold;
+		  transition: 0.3s;
+		}
+		
+		.close:hover,
+		.close:focus {
+		  color: #bbb;
+		  text-decoration: none;
+		  cursor: pointer;
+		}
+		
+		#doc_text {
+		  margin: auto;
+		  display: block;
+		  width: 80%;
+		  max-width: 700px;
+		  text-align: center;
+		  color: #ccc;
+		  padding: 10px 0;
+		  height: 150px;
+		}
+		
+		
+		
 	</style>
 </head>
 <body>
@@ -53,19 +117,19 @@
 			</tr>
 		</table>
 	</div></br>
-	<table>
+	<table width="100%";>
 		<tr>
-			<td>
+			<td width="40%" style="text-align:center;">
 				<svg id="death_day_bar" width="300" height="200">
 					<text id='label' x='0' y='20'>Deaths by day</text>
 				</svg>
 			</td>
-			<td>
+			<td width="30%" style="text-align:center;">
 				<svg id="age_bar" width="300" height="200">
 					<text id='label' x='0' y='20'>Deaths by age group</text>
 				</svg>
 			</td>
-			<td>
+			<td width="30%" style="text-align:center;">
 				<svg id="sex_bar" width="300" height="200">
 					<text id='label' x='0' y='20'>Deaths by sex</text>
 				</svg>
@@ -83,8 +147,35 @@
 			</td>
 		</tr>
 	</table>
-
+	<br><br>
+	<div style="text-align:center;"><button type="button" id="documenation">Documentation Page</button><button type="button" id="video">Video Overview</button></div>
+	<div id="doc_modal" class="modal">
+		<span class="close">&times;</span>
+		<div id="doc_text">I envisioned the Broad Street cholera outbreak problem in context to the COVID19 pandemic – how would John Snow have visualized this data using modern tools, and what kind of dashboard could be configured to track this outbreak and other outbreaks daily to help control the spread of cholera. I was slightly limited within the context of the assignment and historical data – there are many more functional tools for interacting with maps available. Plotting streets a line at a time, handling scaling, etc presents challenges that wouldn’t exist in a modern setting.<br><br>
+			However, that doesn’t stop us from building upon John Snow’s work and enhancing it with modern tools. Instead of taking a waterfall design approach, I treated this as an agile problem, answering the assignment requirements one step at a time and optimizing the design as I went. It started with plotting the map/deaths/pumps and choosing colors that were representative. I wanted to use red for deaths and blue for pumps, but ran this through a color filter and found that orange and purple were more functional for color blind users. A blueish green was chosen as a third color for annotating areas of interest within the map such as major streets, the work house, and the brewery. <br><br>
+			I then worked to create bar graphs representing deaths by day, age, and sex. Because these are deaths, they are also colored orange to match the map. As I was adding interactivity, I chose black to mark deaths that were disabled by the user. This color choice was made to mimic the original John Snow map and highlight how color can be used to enhance the data.<br><br>
+			Interactivity led me to some interesting questions within the data that weren’t discoverable prior to interactivity. For example, were there more male or female deaths at the start of the outbreak? What age groups were affected first? Do we see a change as the outbreak goes on? With these questions in mind, I decided to replicate the bar charts for days, ages, and sexes, and update based on the user interactions. This allows a user to query by some parameters and get feedback in real time. For example, we can compare age/sex deaths at the beginning of the outbreak vs the end easily and find that the distributions in age and sex do slightly change. This is shown below for reference. <br><br>
+		<table><tr><td><img class="modal-content" id="img01" src="beginning.PNG"></td>
+		<td><img class="modal-content" id="img02" src="end.PNG"></td></tr></table>
+		</div>
+		
+	</div>
+	
 	<script>
+		//modal help from - https://www.w3schools.com/howto/howto_css_modal_images.asp
+		var doc_modal = document.getElementById("doc_modal");
+		var doc_button = document.getElementById("documenation");
+		var doc_close = document.getElementsByClassName("close")[0];
+		doc_button.onclick = function() 
+		{
+			doc_modal.style.display = "block";
+		}
+		doc_close.onclick = function(){
+			doc_modal.style.display = "none";
+		}
+		
+		
+		
 		//setting up variables for later
 		//main map
 		var map_width = 600;
